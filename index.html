@@ -66,6 +66,17 @@ const fmt=d=>d.toISOString().replace('T',' ').replace('Z',' UTC');
 
 const scene = new THREE.Scene();
 
+// Earth Rotation Angle (ERA) in radians, IAU 2000 definition
+function earthRotationAngle(dateUTC){
+  const jd = dateUTC / 86400_000 + 2440587.5;        // Unix→JD
+  const T  = (Math.floor(jd) - 2451545.0) / 36525;   // centuries since J2000
+  const seconds = (jd % 1) * 86400;                  // seconds into day
+  // ERA  = 2π * (0.7790572732640 + 1.00273781191135448 * D + seconds/86400)
+  const D = (Math.floor(jd) - 2451545.0);            // whole days since J2000
+  const era = 2*Math.PI * (0.7790572732640 + 1.00273781191135448 * D + seconds/86400);
+  return era % (2*Math.PI);
+}
+
 // —— camera & controls ———————————————————————————————
 const camera = new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.1,40_000);
 camera.position.set(-300,200,600);
@@ -211,8 +222,8 @@ function animate(){requestAnimationFrame(animate);
   earthLabel.style.left = `${x}px`;
   earthLabel.style.top  = `${y - 40}px`;
 
-  const spinAngle = 2 * Math.PI * (t % SIDEREAL_DAY_S) / SIDEREAL_DAY_S;
-  earth.mesh.rotation.y = spinAngle;   // only Earth has p.spin set
+  const era = earthRotationAngle(Date.now());   // radians
+  earth.mesh.rotation.y = -era;                 // negate so Sun‑facing side = noon
 
   // Amsterdam date‑time
   earthLabel.textContent = new Date().toLocaleString('en-GB',{
