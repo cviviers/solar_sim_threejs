@@ -77,9 +77,10 @@ function earthRotationAngle(dateUTC){
   return era % (2*Math.PI);
 }
 
-// —— camera & controls ———————————————————————————————
-const camera = new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.1,40_000);
+// —— camera & controls ———————————————————————
+const camera = new THREE.PerspectiveCamera(10,innerWidth/innerHeight,0.1,40_000);
 camera.position.set(-300,200,600);
+
 const controls = new OrbitControls(camera,renderer.domElement);
 controls.enablePan = true;          // allow panning
 // Remap mouse buttons: middle pans, right zooms
@@ -188,6 +189,16 @@ planetsData.forEach(([name,tex,r,a,e,i,Om,w,L])=>{
 });
 
 const earth = planets.find(p => p.name === 'Earth');
+
+const t0 = (Date.now() - J2000) / 1000;               // seconds since J2000
+const earthPos0 = pos(earth, t0);                     // Earth's heliocentric position now
+
+controls.target.copy(earthPos0);                      // OrbitControls pivot
+camera.position.copy( earthPos0.clone().add(new THREE.Vector3(0, 100, 100)) ); // offset back & up
+camera.lookAt( earthPos0 );
+controls.update(); 
+
+// camera.rotation.x += Math.PI / 2;   // extra 15° downward
 
 // —— toggle radius mode ————————————————————————————
 let literalMode = false;
