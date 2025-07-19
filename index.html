@@ -54,8 +54,10 @@ const sunlight = new THREE.PointLight(0xffffff,2.5,0,2);
 scene.add(sunlight);
 
 // Sun mesh (emissive)
+const SUN_ARTISTIC_RADIUS = 12; // original geometry radius
+const SUN_LITERAL_SCALE = (SUN_RADIUS_AU*AU) / SUN_ARTISTIC_RADIUS;
 const sunMat = new THREE.MeshBasicMaterial({color:0xffffaa});
-const sunMesh= new THREE.Mesh(new THREE.SphereGeometry(12,32,32),sunMat);
+const sunMesh= new THREE.Mesh(new THREE.SphereGeometry(SUN_ARTISTIC_RADIUS,32,32),sunMat);
 scene.add(sunMesh);
 
 // Add subtle lens‑flare‑like sprite glow
@@ -169,6 +171,9 @@ btn.addEventListener('click',()=>{
     const s = literalMode ? p.scaleFactor : 1;
     p.mesh.scale.set(s,s,s);
   });
+  const sSun = literalMode ? SUN_LITERAL_SCALE : 1;
+  sunMesh.scale.set(sSun,sSun,sSun);
+  sunGlow.scale.set(120*sSun,120*sSun,1);
 });
 
 // — animate ————————————————————————————————————————
