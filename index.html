@@ -57,7 +57,7 @@ scene.add(sunMesh);
 
 // Add subtle lens‑flare‑like sprite glow
 const spriteTex = new THREE.TextureLoader().load('https://threejs.org/examples/textures/lensflare/lensflare0.png');
-const spriteMat = new THREE.SpriteMaterial({map:spriteTex,color:0xffffbb,transparent:true,opacity:0.5});
+const spriteMat = new THREE.SpriteMaterial({map:spriteTex,color:0xffffbb,transparent:true,opacity:0.2});
 const sunGlow  = new THREE.Sprite(spriteMat);
 sunGlow.scale.set(120,120,1);
 sunMesh.add(sunGlow);
@@ -66,6 +66,8 @@ sunMesh.add(sunGlow);
 const starTex = new THREE.TextureLoader().load('./textures/eso0932a.jpg');
 const starGeo = new THREE.SphereGeometry(20000,64,64);
 const starMat = new THREE.MeshBasicMaterial({map:starTex,side:THREE.BackSide});
+// Adjust the backgound to be darker and more starry
+starMat.color.set(0x000022);
 scene.add(new THREE.Mesh(starGeo,starMat));
 
 // —— constants & helpers ———————————————————————————
