@@ -55,6 +55,8 @@ document.body.appendChild(renderer.domElement);
 const AU=50;
 const EARTH_RADIUS_AU = 0.00004264; // 1 Earth radius in AU
 const SUN_RADIUS_AU   = 0.00465047;         // 1 Solar radius in AU
+const SIDEREAL_DAY_S = 86164;  // Earth rotation period
+
 const DAY_S=86_400;
 const J2000=Date.UTC(2000,0,1,12);
 const hud=document.getElementById('hud');
@@ -95,9 +97,6 @@ const spriteMat = new THREE.SpriteMaterial({map:spriteTex,color:0xffffbb,transpa
 const sunGlow  = new THREE.Sprite(spriteMat);
 sunGlow.scale.set(120,120,1);
 sunMesh.add(sunGlow);
-
-
-
 
 // axis
 const Z_AXIS=new THREE.Vector3(0,0,1);const X_AXIS=new THREE.Vector3(1,0,0);
@@ -170,17 +169,10 @@ planetsData.forEach(([name,tex,r,a,e,i,Om,w,L])=>{
   const q=new THREE.Quaternion().setFromAxisAngle(Z_AXIS,p.Ω).multiply(new THREE.Quaternion().setFromAxisAngle(X_AXIS,p.i)).multiply(new THREE.Quaternion().setFromAxisAngle(Z_AXIS,p.ω));
   ring.setRotationFromQuaternion(q);
   scene.add(ring);
-
-  // Saturn ring
-//   if(name==='Saturn'){
-//     const ringTex=loader.load(texRoot+'saturnringcolor.jpg');
-//     ringTex.colorSpace=THREE.SRGBColorSpace;
-//     const ringGeo=new THREE.RingGeometry(Math.cbrt(r)*0.9,Math.cbrt(r)*2.0,64);
-//     const ringMat=new THREE.MeshStandardMaterial({map:ringTex,side:THREE.DoubleSide,transparent:true,alphaTest:0.5});
-//     const satRing=new THREE.Mesh(ringGeo,ringMat);
-//     satRing.rotation.x=Math.PI/2; // flat in planet equator (approx)
-//     p.mesh.add(satRing);
-//   }
+  if (name === 'Earth') {
+    p.mesh.rotation.z = THREE.MathUtils.degToRad(23.44);   // obliquity
+    p.spin = true;                                         // flag for animate()
+  }
   planets.push(Object.assign(p,{a,radius:r}));
 });
 
@@ -208,6 +200,7 @@ function worldToScreen(vec3){
   };
 }
 
+earth.mesh.rotation.z = THREE.MathUtils.degToRad(23.44);
 
 // — animate ————————————————————————————————————————
 function animate(){requestAnimationFrame(animate);
@@ -218,6 +211,9 @@ function animate(){requestAnimationFrame(animate);
   earthLabel.style.left = `${x}px`;
   earthLabel.style.top  = `${y - 40}px`;
 
+  const spinAngle = 2 * Math.PI * (t % SIDEREAL_DAY_S) / SIDEREAL_DAY_S;
+  earth.mesh.rotation.y = spinAngle;   // only Earth has p.spin set
+
   // Amsterdam date‑time
   earthLabel.textContent = new Date().toLocaleString('en-GB',{
     timeZone: 'Europe/Amsterdam',
@@ -226,6 +222,7 @@ function animate(){requestAnimationFrame(animate);
     });
   hud.textContent=fmt(new Date());
   controls.update();renderer.render(scene,camera);
+
 }
 animate();
 
