@@ -67,8 +67,12 @@ sunMesh.add(sunGlow);
 
 
 // —— constants & helpers ———————————————————————————
-const AU=50;const DAY_S=86_400;const J2000=Date.UTC(2000,0,1,12);
+const AU=50;
+const EARTH_RADIUS_AU = 0.00004264; // 1 Earth radius in AU
+const DAY_S=86_400;
+const J2000=Date.UTC(2000,0,1,12);
 const hud=document.getElementById('hud');
+const btn     = document.getElementById('scaleBtn');
 const fmt=d=>d.toISOString().replace('T',' ').replace('Z',' UTC');
 
 // axis
@@ -111,7 +115,16 @@ function rotateX(y,z,a){const c=Math.cos(a),s=Math.sin(a);return [y*c-z*s,y*s+z*
 const loader=new THREE.TextureLoader();
 const planets=[];
 planetsData.forEach(([name,tex,r,a,e,i,Om,w,L])=>{
-  const p={name,a,e,i:THREE.MathUtils.degToRad(i),Ω:THREE.MathUtils.degToRad(Om),ω:THREE.MathUtils.degToRad(w)};
+  const artisticRadiusUnits = Math.cbrt(R)*0.7;
+  const literalRadiusUnits  = R * EARTH_RADIUS_AU * AU;
+  const scaleFactor         = literalRadiusUnits / artisticRadiusUnits;
+
+  const p={name,a,e,
+    i:THREE.MathUtils.degToRad(i),
+    Ω:THREE.MathUtils.degToRad(Om),
+    ω:THREE.MathUtils.degToRad(w),
+    artisticRadiusUnits,
+    scaleFactor};
   p.M0=(THREE.MathUtils.degToRad(L)-p.Ω-p.ω)%(2*Math.PI);
   p.n=2*Math.PI/ (Math.sqrt(a**3)*DAY_S*365.256898);
 
