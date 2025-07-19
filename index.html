@@ -63,7 +63,7 @@ sunGlow.scale.set(120,120,1);
 sunMesh.add(sunGlow);
 
 // —— star‑field background ——————————————————————————
-const starTex = new THREE.TextureLoader().load('./textures/eso0932a.jpg');
+const starTex = new THREE.TextureLoader().load('https://github.com/cviviers/solar_sim_threejs/tree/master/textures/eso0932a.jpg');
 const starGeo = new THREE.SphereGeometry(20000,64,64);
 const starMat = new THREE.MeshBasicMaterial({map:starTex,side:THREE.BackSide});
 scene.add(new THREE.Mesh(starGeo,starMat));
@@ -77,7 +77,7 @@ const fmt=d=>d.toISOString().replace('T',' ').replace('Z',' UTC');
 const Z_AXIS=new THREE.Vector3(0,0,1);const X_AXIS=new THREE.Vector3(1,0,0);
 
 // —— planet data (texture URLs) ——————————————————————
-const texRoot='./textures/';
+const texRoot='https://github.com/cviviers/solar_sim_threejs/tree/master/textures/';
 const planetsData=[
   ['Mercury','mercurymap.jpg',0.383,0.38709893,0.20563069,7.00487, 48.33167,29.12492,252.25084],
   ['Venus'  ,'venusmap.jpg'  ,0.949,0.72333199,0.00677323,3.39471, 76.68069,54.85229,181.97973],
