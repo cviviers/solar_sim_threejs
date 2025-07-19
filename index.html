@@ -40,6 +40,16 @@ renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping   = THREE.ACESFilmicToneMapping;
 document.body.appendChild(renderer.domElement);
 
+// —— constants & helpers ———————————————————————————
+const AU=50;
+const EARTH_RADIUS_AU = 0.00004264; // 1 Earth radius in AU
+const SUN_RADIUS_AU   = 0.00465047;         // 1 Solar radius in AU
+const DAY_S=86_400;
+const J2000=Date.UTC(2000,0,1,12);
+const hud=document.getElementById('hud');
+const btn     = document.getElementById('scaleBtn');
+const fmt=d=>d.toISOString().replace('T',' ').replace('Z',' UTC');
+
 const scene = new THREE.Scene();
 
 // —— camera & controls ———————————————————————————————
@@ -68,14 +78,7 @@ sunGlow.scale.set(120,120,1);
 sunMesh.add(sunGlow);
 
 
-// —— constants & helpers ———————————————————————————
-const AU=50;
-const EARTH_RADIUS_AU = 0.00004264; // 1 Earth radius in AU
-const DAY_S=86_400;
-const J2000=Date.UTC(2000,0,1,12);
-const hud=document.getElementById('hud');
-const btn     = document.getElementById('scaleBtn');
-const fmt=d=>d.toISOString().replace('T',' ').replace('Z',' UTC');
+
 
 // axis
 const Z_AXIS=new THREE.Vector3(0,0,1);const X_AXIS=new THREE.Vector3(1,0,0);
