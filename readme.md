@@ -30,16 +30,16 @@ For each planet the simulation stores the traditional six orbital elements, **he
 From these we derive
 
 - **Mean anomaly at J2000**:    *M₀ = L − Ω − ω*
-- **Mean motion** *(rad s⁻¹)*: \(n = \sqrt{\mu/a^{3}} \quad≈\; 2π \big/\big(\sqrt{a^{3}}·365.256898·86 400\big)\) with \(\mu = GM_{☉}\).  We treat \(\mu\) as 1 AU³  day⁻² so the constant drops out.
+- **Mean motion** *(rad s⁻¹)*: $ n = \sqrt{\mu/a^{3}} \quad≈\; 2π \big/\big(\sqrt{a^{3}}·365.256898·86 400\big)$ with $\mu = GM_{☉}$.  We treat $\mu$ as 1 AU³  day⁻² so the constant drops out.
 
 ### 1.2  Time‑stepping
 
-Every frame we compute the true anomaly \(ν(t)\) in three steps:
+Every frame we compute the true anomaly $ν(t)$ in three steps:
 
-1. **Mean anomaly** \(M(t) = M₀ + n·(t−t₀)\)
-2. **Eccentric anomaly E** via Newton–Raphson \(E−e\sin E = M\)
-3. **Coordinates in orbital plane** \(x' = a(\cos E − e), \; y' = a\sqrt{1−e^{2}}\sin E\)
-4. **Rotate** to the ecliptic using the ZXZ sequence: \(\vec r = R_{z}(Ω)\,R_{x}(i)\,R_{z}(ω)\,[x',y',0]^{T}\)
+1. **Mean anomaly** $M(t) = M₀ + n·(t−t₀)$
+2. **Eccentric anomaly E** via Newton–Raphson $E−e \sin E = M$
+3. **Coordinates in orbital plane** $x' = a( \cos E − e), \; y' = a\sqrt{1−e^{2}}\sin E$
+4. **Rotate** to the ecliptic using the ZXZ sequence: $\vec r = R_{z}(Ω)\,R_{x}(i)\,R_{z}(ω)\,[x',y',0]^{T}$
 
 The result is multiplied by `` so 1 world‑unit ≈ 0.02 AU.
 
@@ -126,7 +126,7 @@ textures/           All image assets (see list above)
 
 ### License & credits
 
-Textures © NASA/JPL; three.js © Mr doob et al.; code MIT License.
+Textures © NASA/JPL; 
 
-> Built with **three.js r162** · by [Your Name] · 2025‑07‑19
+> Built with **three.js r162** · by Christiaan Viviers · 2025‑07‑19
 
