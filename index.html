@@ -63,12 +63,12 @@ sunGlow.scale.set(120,120,1);
 sunMesh.add(sunGlow);
 
 // —— star‑field background ——————————————————————————
-const starTex = new THREE.TextureLoader().load('./textures/eso0932a.jpg');
-const starGeo = new THREE.SphereGeometry(20000,64,64);
-const starMat = new THREE.MeshBasicMaterial({map:starTex,side:THREE.BackSide});
-// Adjust the backgound to be darker and more starry
-starMat.color.set(0x000022);
-scene.add(new THREE.Mesh(starGeo,starMat));
+// const starTex = new THREE.TextureLoader().load('./textures/eso0932a.jpg');
+// const starGeo = new THREE.SphereGeometry(20000,64,64);
+// const starMat = new THREE.MeshBasicMaterial({map:starTex,side:THREE.BackSide});
+// // Adjust the backgound to be darker and more starry
+// starMat.color.set(0x000022);
+// scene.add(new THREE.Mesh(starGeo,starMat));
 
 // —— constants & helpers ———————————————————————————
 const AU=50;const DAY_S=86_400;const J2000=Date.UTC(2000,0,1,12);
