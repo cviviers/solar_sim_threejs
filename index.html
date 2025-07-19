@@ -115,8 +115,8 @@ function rotateX(y,z,a){const c=Math.cos(a),s=Math.sin(a);return [y*c-z*s,y*s+z*
 const loader=new THREE.TextureLoader();
 const planets=[];
 planetsData.forEach(([name,tex,r,a,e,i,Om,w,L])=>{
-  const artisticRadiusUnits = Math.cbrt(R)*0.7;
-  const literalRadiusUnits  = R * EARTH_RADIUS_AU * AU;
+  const artisticRadiusUnits = Math.cbrt(r)*0.7;
+  const literalRadiusUnits  = r * EARTH_RADIUS_AU * AU;
   const scaleFactor         = literalRadiusUnits / artisticRadiusUnits;
 
   const p={name,a,e,
