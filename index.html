@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Live Solar System – Three.js</title>
+  <style>
+    body{margin:0;overflow:hidden;background:#000;font-family:sans-serif;color:#fff}
+    canvas{display:block}
+    #hud{position:fixed;top:8px;left:8px;font-size:14px;pointer-events:none}
+  </style>
+
+  <!-- Import map so we can use bare specifiers like “three” -->
+  <script type="importmap">
+  {
+    "imports":{
+      "three":"https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
+      "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+<div id="hud"></div>
+<script type="module">
+/*───────────────────────────────────────────────────────────────
+  REAL‑TIME SOLAR‑SYSTEM MODEL (heliocentric, ecliptic J2000)
+  ‣ Planet meshes and orbit rings are generated from the same
+    Keplerian elements and rotation sequence, guaranteeing that
+    each body always sits exactly on its ellipse.
+────────────────────────────────────────────────────────────────*/
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ——— constants & helpers ———————————————————————————————
+const AU            = 50;             // visual scale: 1 AU → 50 world units
+const DAY_S         = 86_400;         // seconds per day
+const J2000_EPOCH   = Date.UTC(2000,0,1,12);   // 2000‑01‑01 12:00 TT
+const hud           = document.getElementById('hud');
+const fmtUTC        = d=>d.toISOString().replace('T',' ').replace('Z',' UTC');
+const Z_AXIS        = new THREE.Vector3(0,0,1);
+const X_AXIS        = new THREE.Vector3(1,0,0);
+
+// ——— J2000 heliocentric orbital elements (VSOP87) —————————
+const raw = [
+  // name , hexColor, R⊕ ,    a (AU) ,      e      ,    i°  ,   Ω°   ,   ω°   ,    L°
+  ['Mercury',0xb1b1b1,0.383,0.38709893,0.20563069, 7.00487, 48.33167, 29.12492,252.25084],
+  ['Venus'  ,0xe6e2af,0.949,0.72333199,0.00677323, 3.39471, 76.68069, 54.85229,181.97973],
+  ['Earth'  ,0x2a60ff,1.000,1.00000011,0.01671022, 0.00005,-11.26064,114.20783,100.46435],
+  ['Mars'   ,0xff4500,0.532,1.52366231,0.09341233, 1.85061, 49.57854,286.46230,355.45332],
+  ['Jupiter',0xd9b38c,11.21,5.20336301,0.04839266, 1.30530,100.55615,273.87765, 34.40438],
+  ['Saturn' ,0xf5deb3, 9.45,9.53707032,0.05415060, 2.48446,113.71504,339.39390, 49.94432],
+  ['Uranus' ,0x7fffd4, 4.01,19.19126393,0.04716771,0.76986, 74.22988, 98.84957,313.23218],
+  ['Neptune',0x4169e1, 3.88,30.06896348,0.00858587,1.76917,131.72169,276.41766,304.88003],
+  ['Pluto'  ,0x8b4513, 0.18,39.48211675,0.24882730,17.14012,110.30347,224.06891,238.92938]
+].map(([name,color,r,a,e,i,Om,w,L])=>({
+  name,
+  color,
+  radius:r,                     // in Earth radii (visual only)
+  a,e,
+  i :THREE.MathUtils.degToRad(i),
+  Ω :THREE.MathUtils.degToRad(Om),
+  ω :THREE.MathUtils.degToRad(w),
+  L :THREE.MathUtils.degToRad(L)
+}));
+
+// add derived values
+raw.forEach(p=>{
+  p.M0 = (p.L - p.Ω - p.ω) % (2*Math.PI);           // mean anomaly @ J2000
+  p.periodDays = Math.sqrt(p.a**3) * 365.256898;    // Kepler’s 3rd law
+  p.n = 2*Math.PI / (p.periodDays*DAY_S);           // mean motion (rad s‑¹)
+});
+
+// ——— math helpers ————————————————————————————————
+function keplerE(M,e,tol=1e-9){ // solve Kepler with Newton‑Raphson
+  let E=M, d;
+  do{ d = (E - e*Math.sin(E) - M) / (1 - e*Math.cos(E));
+      E -= d; }while(Math.abs(d)>tol);
+  return E;
+}
+function rotateZXZ(v,ω,i,Ω){  // orbital frame → ecliptic  (Z ω → X i → Z Ω)
+  // 1) Z ω
+  let {x,y,z}=v;
+  let c=Math.cos(ω),s=Math.sin(ω);
+  [x,y] = [x*c - y*s, x*s + y*c];
+  // 2) X i
+  c=Math.cos(i); s=Math.sin(i);
+  [y,z] = [y*c - z*s, y*s + z*c];
+  // 3) Z Ω
+  c=Math.cos(Ω); s=Math.sin(Ω);
+  return new THREE.Vector3(x*c - y*s, x*s + y*c, z);
+}
+function positionAtTime(p,t){
+  const M = (p.M0 + p.n*t) % (2*Math.PI);
+  const E = keplerE(M,p.e);
+  const x = p.a*(Math.cos(E) - p.e);
+  const y = p.a*Math.sqrt(1-p.e*p.e)*Math.sin(E);
+  const vec = rotateZXZ({x,y,z:0}, p.ω, p.i, p.Ω);
+  return vec.multiplyScalar(AU);
+}
+
+// ——— THREE scene ————————————————————————————————
+const scene   = new THREE.Scene();
+const camera  = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 20_000);
+camera.position.set(-300,200,500);
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.PointLight(0xffffff,1.2));
+scene.add(new THREE.AmbientLight(0x222222));
+
+const controls = new OrbitControls(camera,renderer.domElement);
+controls.enablePan = false;
+controls.minDistance = 100;
+
+
+// Sun mesh (emissive)
+const sunMat = new THREE.MeshBasicMaterial({color:0xffffaa});
+const sunMesh= new THREE.Mesh(new THREE.SphereGeometry(12,32,32),sunMat);
+scene.add(sunMesh);
+
+// Add subtle lens‑flare‑like sprite glow
+const spriteTex = new THREE.TextureLoader().load('https://threejs.org/examples/textures/lensflare/lensflare0.png');
+const spriteMat = new THREE.SpriteMaterial({map:spriteTex,color:0xffffbb,transparent:true,opacity:0.2});
+const sunGlow  = new THREE.Sprite(spriteMat);
+sunGlow.scale.set(120,120,1);
+sunMesh.add(sunGlow);
+
+
+// —— star‑field background ——————————————————————————
+const starTex = new THREE.TextureLoader().load('https://threejs.org/examples/textures/skies/starfield.jpg');
+const starGeo = new THREE.SphereGeometry(20000,64,64);
+const starMat = new THREE.MeshBasicMaterial({map:starTex,side:THREE.BackSide});
+scene.add(new THREE.Mesh(starGeo,starMat));
+
+// Planets & their rings
+const planets=[];
+raw.forEach(p=>{
+  // planet mesh (scale volume visually)
+  const mesh = new THREE.Mesh(
+    new THREE.SphereGeometry(Math.cbrt(p.radius)*0.7,16,16),
+    new THREE.MeshLambertMaterial({color:p.color})
+  );
+  scene.add(mesh);
+  p.mesh = mesh;
+
+  // orbit ring (ellipse in orbital plane)
+  const b   = p.a*Math.sqrt(1-p.e*p.e) * AU;
+  const eCurve = new THREE.EllipseCurve(0,0,p.a*AU,b,0,2*Math.PI,false,0);
+  // Shift ellipse so the Sun (focus) is at the origin, not the centre.
+  const focusOffset = p.a * p.e * AU;            // c = a·e
+  const pts = eCurve.getPoints(360).map(pt => new THREE.Vector3(pt.x - focusOffset, pt.y, 0));
+  const ring = new THREE.Line( new THREE.BufferGeometry().setFromPoints(pts),
+                              new THREE.LineBasicMaterial({color:0x444444}) );
+  // rotate ring with the very same ZXZ sequence
+  const q  = new THREE.Quaternion();
+  const qΩ = new THREE.Quaternion().setFromAxisAngle(Z_AXIS,p.Ω);
+  const qi = new THREE.Quaternion().setFromAxisAngle(X_AXIS,p.i);
+  const qω = new THREE.Quaternion().setFromAxisAngle(Z_AXIS,p.ω);
+  q.copy(qΩ).multiply(qi).multiply(qω);   // = Z(Ω)·X(i)·Z(ω)
+  ring.setRotationFromQuaternion(q);
+  scene.add(ring);
+
+  planets.push(p);
+});
+
+// ——— animation loop ———————————————————————————————
+function animate(){
+  requestAnimationFrame(animate);
+  const t = (Date.now()-J2000_EPOCH)/1000;   // seconds since J2000 TT ≈ UTC
+  planets.forEach(p=> p.mesh.position.copy(positionAtTime(p,t)) );
+  hud.textContent = fmtUTC(new Date());
+  controls.update();
+  renderer.render(scene,camera);
+}
+animate();
+
+// responsiveness
+addEventListener('resize',()=>{
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
